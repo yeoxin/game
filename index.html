@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <style>
+        * {
+            text-align: center;
+        }
+        
+        #board {
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        #board tr td {
+            border: 1px solid white;
+            background: #a1adcd;
+            width: 32px;
+            height: 32px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        #board tr td.clicked {
+            background: #6c5ee7;
+        }
+        
+        #board tr td.mine {
+            background: #ff6060;
+        }
+        
+        #mines-remaining {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>지뢰찾기</h1>
+    <div id="mines-remaining">지뢰 수 : 0</div>
+    <table id="board"></table>
+    <BUTTON onclick="genGrid();">새로운 게임</BUTTON>
+
+    <script>
+        let grid = document.getElementById("board"); // 보드 요소
+        let mineCount = 0; // 클릭한 지뢰 수
+        let totalMines = 0; // 총 지뢰 수
+        let remainingCells = 64; // 남은 셀 수 (8x8)
+        const ROWS = 8; // 행 수
+        const COLS = 8; // 열 수
+
+        genGrid(); // 초기 보드 생성
+
+        function genGrid() {
+            grid.innerHTML = ""; // 보드 초기화
+            mineCount = 0; // 클릭한 지뢰 수 초기화
+            remainingCells = ROWS * COLS; // 초기화
+            totalMines = 0; // 총 지뢰 수 초기화
+            updateMinesCount(); // 지뢰 수 업데이트
+
+            // 보드 생성
+            for (let i = 0; i < ROWS; i++) {
+                row = grid.insertRow(i); // 새 행 추가
+                for (var j = 0; j < COLS; j++) {
+                    cell = row.insertCell(j); // 새 셀 추가
+                    cell.onclick = function() { // 클릭 이벤트 설정
+                        clickBox(this);
+                    };
+                    var mine = document.createAttribute("mine"); // 지뢰 속성 생성
+                    // 30% 확률로 지뢰 배치
+                    if (Math.random() < 0.3) {
+                        mine.value = "true"; // 지뢰 있음
+                        totalMines++;
+                    } else {
+                        mine.value = "false"; // 지뢰 없음
+                    }
+                    cell.setAttributeNode(mine); // 지뢰 속성 추가
+                }
+            }
+            updateMinesCount(); // 지뢰 수 업데이트
+        }
+
+        function clickBox(cell) {
+            // 이미 클릭된 셀 또는 지뢰 셀인 경우 무시
+            if (cell.className === "clicked" || cell.className === "mine") return;
+
+            // 클릭한 셀이 지뢰인 경우
+            if (cell.getAttribute("mine") == "true") {
+                cell.className = "mine";
+                alert("게임이 종료되었습니다."); // 게임 종료 알림
+                revealMines(); // 모든 지뢰 표시
+            } else {
+                cell.className = "clicked";
+                remainingCells--; // 남은 셀 수 감소
+
+                // 주변 지뢰 수 계산
+                let minesAround = countMinesAround(cell);
+                if (minesAround > 0) {
+                    cell.innerHTML = minesAround; // 주변 지뢰 수 표시
+                }
+
+                // 승리 조건 체크
+                if (remainingCells === totalMines) {
+                    alert("축하합니다! 게임에서 승리했습니다."); // 승리 알림
+                    revealMines(); // 모든 지뢰 표시
+                }
+            }
+        }
+
+        function countMinesAround(cell) {
+            let row = cell.parentNode.rowIndex; // 현재 셀의 행
+            let col = cell.cellIndex; // 현재 셀의 열
+            let mineCount = 0; // 주변 지뢰 수
+
+            // 3x3 주변 칸 탐색
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    let newRow = row + i; // 새 행
+                    let newCol = col + j; // 새 열
+
+                    // 범위 체크
+                    if (newRow >= 0 && newRow < ROWS && newCol >= 0 && newCol < COLS) {
+                        let adjacentCell = grid.rows[newRow].cells[newCol]; // 주변 셀
+                        if (adjacentCell.getAttribute("mine") == "true") {
+                            mineCount++; // 지뢰 수 증가
+                        }
+                    }
+                }
+            }
+            return mineCount; // 주변 지뢰 수 반환
+        }
+
+        function revealMines() {
+            for (let i = 0; i < grid.rows.length; i++) {
+                for (let j = 0; j < grid.rows[i].cells.length; j++) {
+                    let cell = grid.rows[i].cells[j];
+                    if (cell.getAttribute("mine") == "true") {
+                        cell.className = "mine"; // 지뢰 표시
+                    }
+                }
+            }
+        }
+
+        function updateMinesCount() {
+            // 지뢰 수 업데이트
+            document.getElementById("mines-remaining").innerHTML = "지뢰 수 : " + totalMines;
+        }
+    </script>
+</body>
+
+</html>
